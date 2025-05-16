@@ -1,4 +1,4 @@
-# HealthKit Generator
+# HealthKit Generator <img src="Screenshots/healthKitGenerator/png" width="32"/>
 
 🚀 **My first Vibe Coded project!**  
 A HealthKit companion app for generating high-volume synthetic health data — ideal for testing apps that rely on Apple's HealthKit.
