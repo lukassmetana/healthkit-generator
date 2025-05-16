@@ -5,7 +5,12 @@ struct ContentView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Button("Generate Data") {
+            ForEach(store.availableMetrics.indices, id: \.self) { index in
+                Toggle(store.availableMetrics[index].name, isOn: $store.availableMetrics[index].isSelected)
+            }
+            .padding(.horizontal)
+            
+            Button("Generate Selected Data") {
                 store.generateSyntheticData()
             }
             .padding()
@@ -13,7 +18,7 @@ struct ContentView: View {
             .foregroundColor(.white)
             .cornerRadius(12)
 
-            Button("Delete Data") {
+            Button("Delete All Data") {
                 store.deleteSyntheticData()
             }
             .padding()

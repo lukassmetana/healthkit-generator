@@ -2,6 +2,16 @@ import Foundation
 import HealthKit
 import SwiftUI
 
+struct MetricDefinition: Identifiable {
+    let id = UUID()
+    let name: String
+    let typeIdentifier: HKQuantityTypeIdentifier
+    let unit: HKUnit
+    let valueRange: ClosedRange<Int>
+    let interval: TimeInterval
+    var isSelected: Bool
+}
+
 @MainActor
 class HealthKitStore: ObservableObject {
     @Published var log: String = ""
@@ -9,6 +19,17 @@ class HealthKitStore: ObservableObject {
 
     private let calendar = Calendar.current
     private let healthStore = HealthKitManager.shared
+
+    @Published var availableMetrics: [MetricDefinition] = [
+        MetricDefinition(name: "Steps", typeIdentifier: .stepCount, unit: .count(), valueRange: 5...40, interval: 60, isSelected: true),
+        MetricDefinition(name: "Heart Rate", typeIdentifier: .heartRate, unit: HKUnit(from: "count/min"), valueRange: 60...100, interval: 300, isSelected: true),
+        MetricDefinition(name: "Resting HR", typeIdentifier: .restingHeartRate, unit: HKUnit(from: "count/min"), valueRange: 50...90, interval: 600, isSelected: true),
+        MetricDefinition(name: "HRV", typeIdentifier: .heartRateVariabilitySDNN, unit: .secondUnit(with: .milli), valueRange: 20...100, interval: 3600, isSelected: true),
+        MetricDefinition(name: "Respiratory Rate", typeIdentifier: .respiratoryRate, unit: HKUnit(from: "count/min"), valueRange: 12...20, interval: 600, isSelected: true),
+        MetricDefinition(name: "Body Temp", typeIdentifier: .bodyTemperature, unit: .degreeCelsius(), valueRange: 3600...3750, interval: 3600, isSelected: true),
+        MetricDefinition(name: "Basal Energy", typeIdentifier: .basalEnergyBurned, unit: .kilocalorie(), valueRange: 50...75, interval: 3600, isSelected: true),
+        MetricDefinition(name: "Active Energy", typeIdentifier: .activeEnergyBurned, unit: .kilocalorie(), valueRange: 5...15, interval: 1800, isSelected: true)
+    ]
 
     // Expanded set of sample types for both authorization and data generation
     private let sampleTypes: [HKSampleType] = [
@@ -58,127 +79,25 @@ class HealthKitStore: ObservableObject {
             guard let startOfDay = calendar.date(byAdding: .day, value: -dayOffset, to: now) else { continue }
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
-            // heartRateVariabilitySDNN (20-100 ms every hour)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .heartRateVariabilitySDNN,
-                unit: .secondUnit(with: .milli),
-                valueRange: 20...100,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 3600
-            ) { success, error in
-                self.log.append(success ? "✅ HRV for \(startOfDay.formatted())\n" : "❌ HRV error: \(error?.localizedDescription ?? "unknown")\n")
+            // Generate all selected quantity metrics
+            for metric in availableMetrics where metric.isSelected {
+                healthStore.saveRandomQuantitySamples(
+                    typeIdentifier: metric.typeIdentifier,
+                    unit: metric.unit,
+                    valueRange: metric.valueRange,
+                    startDate: startOfDay,
+                    endDate: endOfDay,
+                    interval: metric.interval
+                ) { success, error in
+                    self.log.append(
+                        success
+                        ? "✅ \(metric.name) for \(startOfDay.formatted())\n"
+                        : "❌ \(metric.name) error: \(error?.localizedDescription ?? "unknown")\n"
+                    )
+                }
             }
 
-            // restingHeartRate (50-90 bpm every 10 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .restingHeartRate,
-                unit: HKUnit(from: "count/min"),
-                valueRange: 50...90,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 600
-            ) { success, error in
-                self.log.append(success ? "✅ Resting HR for \(startOfDay.formatted())\n" : "❌ Resting HR error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // respiratoryRate (12-20 breaths/min every 10 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .respiratoryRate,
-                unit: HKUnit(from: "count/min"),
-                valueRange: 12...20,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 600
-            ) { success, error in
-                self.log.append(success ? "✅ Respiratory Rate for \(startOfDay.formatted())\n" : "❌ Respiratory Rate error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // bodyTemperature (36.0-37.5 °C every hour)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .bodyTemperature,
-                unit: HKUnit.degreeCelsius(),
-                valueRange: 3600...3750, // values in milli-Celsius, so divide by 100
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 3600
-            ) { success, error in
-                self.log.append(success ? "✅ Body Temp for \(startOfDay.formatted())\n" : "❌ Body Temp error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // stepCount (5-40 steps per minute)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .stepCount,
-                unit: .count(),
-                valueRange: 5...40,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 60
-            ) { success, error in
-                self.log.append(success ? "✅ Steps for \(startOfDay.formatted())\n" : "❌ Steps error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // heartRate (60-100 bpm every 5 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .heartRate,
-                unit: HKUnit(from: "count/min"),
-                valueRange: 60...100,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 300
-            ) { success, error in
-                self.log.append(success ? "✅ HR for \(startOfDay.formatted())\n" : "❌ HR error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // basalEnergyBurned (50-75 kcal hourly)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .basalEnergyBurned,
-                unit: HKUnit.kilocalorie(),
-                valueRange: 50...75,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 3600
-            ) { success, error in
-                self.log.append(success ? "✅ Basal Energy Burned for \(startOfDay.formatted())\n" : "❌ Basal Energy error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // activeEnergyBurned (5-15 kcal every 30 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .activeEnergyBurned,
-                unit: HKUnit.kilocalorie(),
-                valueRange: 5...15,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 1800
-            ) { success, error in
-                self.log.append(success ? "✅ Active Energy Burned for \(startOfDay.formatted())\n" : "❌ Active Energy error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // appleMoveTime (1-5 minutes every 15 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .appleMoveTime,
-                unit: HKUnit.minute(),
-                valueRange: 1...5,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 900
-            ) { success, error in
-                self.log.append(success ? "✅ Apple Move Time for \(startOfDay.formatted())\n" : "❌ Apple Move Time error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // appleExerciseTime (1-4 minutes every 15 minutes)
-            healthStore.saveRandomQuantitySamples(
-                typeIdentifier: .appleExerciseTime,
-                unit: HKUnit.minute(),
-                valueRange: 1...4,
-                startDate: startOfDay,
-                endDate: endOfDay,
-                interval: 900
-            ) { success, error in
-                self.log.append(success ? "✅ Apple Exercise Time for \(startOfDay.formatted())\n" : "❌ Apple Exercise Time error: \(error?.localizedDescription ?? "unknown")\n")
-            }
-
-            // Sleep (one sample per day from 11pm to 7am)
+            // Always generate sleep (you can toggle this too if you want later)
             if let sleepType = HKObjectType.categoryType(forIdentifier: .sleepAnalysis) {
                 let sleepStart = calendar.date(bySettingHour: 23, minute: 0, second: 0, of: startOfDay)!
                 let sleepEnd = calendar.date(byAdding: .hour, value: 8, to: sleepStart)!
@@ -191,7 +110,11 @@ class HealthKitStore: ObservableObject {
                 )
 
                 healthStore.save(sample: sample) { success, error in
-                    self.log.append(success ? "✅ Sleep for \(startOfDay.formatted())\n" : "❌ Sleep error: \(error?.localizedDescription ?? "unknown")\n")
+                    self.log.append(
+                        success
+                        ? "✅ Sleep for \(startOfDay.formatted())\n"
+                        : "❌ Sleep error: \(error?.localizedDescription ?? "unknown")\n"
+                    )
                 }
             }
         }
