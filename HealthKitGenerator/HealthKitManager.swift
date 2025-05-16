@@ -14,6 +14,14 @@ class HealthKitManager {
         }
     }
 
+    func endOfDay(for date: Date) -> Date {
+        var components = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        components.hour = 23
+        components.minute = 59
+        components.second = 59
+        return Calendar.current.date(from: components)!
+    }
+
     func save(sample: HKCategorySample, completion: ((Bool, Error?) -> Void)? = nil) {
         healthStore.save(sample) { success, error in
             DispatchQueue.main.async {
@@ -26,7 +34,7 @@ class HealthKitManager {
     func saveRandomQuantitySamples(
         typeIdentifier: HKQuantityTypeIdentifier,
         unit: HKUnit,
-        valueRange: ClosedRange<Int>,
+        valueRange: ClosedRange<Double>,
         startDate: Date,
         endDate: Date,
         interval: TimeInterval,
@@ -43,13 +51,19 @@ class HealthKitManager {
         var currentDate = startDate
 
         while currentDate < endDate {
-            let value = Int.random(in: valueRange)
+            let value = Double.random(in: valueRange)
             let quantity = HKQuantity(unit: unit, doubleValue: Double(value))
-            let sampleEnd = currentDate.addingTimeInterval(interval)
 
-            let sample = HKQuantitySample(type: quantityType, quantity: quantity, start: currentDate, end: sampleEnd)
+            // Clamp sample end time to not exceed endDate
+            let sampleEnd = min(currentDate.addingTimeInterval(interval), endDate)
+
+            let sample = HKQuantitySample(
+                type: quantityType,
+                quantity: quantity,
+                start: currentDate,
+                end: sampleEnd
+            )
             samples.append(sample)
-
             currentDate = sampleEnd
         }
 
