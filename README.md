@@ -26,6 +26,12 @@ A HealthKit companion app for generating high-volume synthetic health data — i
 - 📝 Scrollable log with real-time feedback
 - 💡 Minimal SwiftUI UI focused on dev productivity
 
+<p float="left">
+  <img src="Screenshots/mock1.jpg" width="200" style="margin-right: 10px;" />
+  <img src="Screenshots/mock2.jpg" width="200" style="margin-right: 10px;" />
+  <img src="Screenshots/mock3.jpg" width="200" />
+</p>
+  
 ---
 
 ## 📲 Metrics supported
