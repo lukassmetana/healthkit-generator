@@ -1,10 +1,3 @@
-//
-//  HealthKitManager.swift
-//  HealthKitGenerator
-//
-//  Created by Lukas Smetana on 15.05.2025.
-//
-
 import Foundation
 import HealthKit
 
@@ -12,36 +5,37 @@ class HealthKitManager {
     static let shared = HealthKitManager()
     private let healthStore = HKHealthStore()
 
-    // Types of data we want to write
-    private var writableTypes: Set<HKSampleType> {
-        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
-            return []
-        }
-        return [stepType]
-    }
-
-    // Request permission to write data
-    func requestAuthorization(completion: @escaping (Bool, Error?) -> Void) {
-        healthStore.requestAuthorization(toShare: writableTypes, read: nil) { success, error in
+    // Request permission to write and read specific types
+    func requestAuthorization(types: Set<HKSampleType>, completion: @escaping (Bool, Error?) -> Void) {
+        healthStore.requestAuthorization(toShare: types, read: types) { success, error in
             DispatchQueue.main.async {
                 completion(success, error)
             }
         }
     }
 
-    // Save random step data for a specific date
-    func saveRandomSteps(
+    func save(sample: HKCategorySample, completion: ((Bool, Error?) -> Void)? = nil) {
+        healthStore.save(sample) { success, error in
+            DispatchQueue.main.async {
+                completion?(success, error)
+            }
+        }
+    }
+
+    // Save random quantity samples
+    func saveRandomQuantitySamples(
+        typeIdentifier: HKQuantityTypeIdentifier,
+        unit: HKUnit,
+        valueRange: ClosedRange<Int>,
         startDate: Date,
         endDate: Date,
         interval: TimeInterval,
         completion: ((Bool, Error?) -> Void)? = nil
     ) {
-        guard let stepType = HKQuantityType.quantityType(forIdentifier: .stepCount) else {
-            completion?(false, NSError(
-                domain: "HealthKitManager",
-                code: 1,
-                userInfo: [NSLocalizedDescriptionKey: "Step Count Type not available"]
-            ))
+        guard let quantityType = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else {
+            completion?(false, NSError(domain: "HealthKitManager", code: 1, userInfo: [
+                NSLocalizedDescriptionKey: "Quantity type not available"
+            ]))
             return
         }
 
@@ -49,20 +43,13 @@ class HealthKitManager {
         var currentDate = startDate
 
         while currentDate < endDate {
-            let steps = Int.random(in: 5...40) // simulate light-to-heavy movement
-            let quantity = HKQuantity(
-                unit: HKUnit.count(),
-                doubleValue: Double(steps)
-            )
+            let value = Int.random(in: valueRange)
+            let quantity = HKQuantity(unit: unit, doubleValue: Double(value))
             let sampleEnd = currentDate.addingTimeInterval(interval)
 
-            let sample = HKQuantitySample(
-                type: stepType,
-                quantity: quantity,
-                start: currentDate,
-                end: sampleEnd
-            )
+            let sample = HKQuantitySample(type: quantityType, quantity: quantity, start: currentDate, end: sampleEnd)
             samples.append(sample)
+
             currentDate = sampleEnd
         }
 
@@ -73,19 +60,19 @@ class HealthKitManager {
         }
     }
 
-    func deleteSteps(startDate: Date, endDate: Date, completion: ((Bool, Error?) -> Void)? = nil) {
-        guard let stepType = HKObjectType.quantityType(forIdentifier: .stepCount) else {
-            completion?(false, NSError(domain: "HealthKitManager", code: 3, userInfo: [NSLocalizedDescriptionKey: "Step Count Type not available"]))
-            return
-        }
-
+    // Delete samples by type and time range
+    func deleteSamples(
+        sampleType: HKSampleType,
+        startDate: Date,
+        endDate: Date,
+        completion: ((Bool, Error?) -> Void)? = nil
+    ) {
         let predicate = HKQuery.predicateForSamples(withStart: startDate, end: endDate, options: [])
 
-        healthStore.deleteObjects(of: stepType, predicate: predicate) { success, _, error in
+        healthStore.deleteObjects(of: sampleType, predicate: predicate) { success, _, error in
             DispatchQueue.main.async {
                 completion?(success, error)
             }
         }
     }
 }
-

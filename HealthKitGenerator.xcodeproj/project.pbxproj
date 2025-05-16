@@ -10,9 +10,22 @@
 		A0B658CE2DD5E4000034A56F /* HealthKitGenerator.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = HealthKitGenerator.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		A0065BEB2DD76C8B00CAE79A /* Exceptions for "HealthKitGenerator" folder in "HealthKitGenerator" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = A0B658CD2DD5E4000034A56F /* HealthKitGenerator */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A0B658D02DD5E4000034A56F /* HealthKitGenerator */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				A0065BEB2DD76C8B00CAE79A /* Exceptions for "HealthKitGenerator" folder in "HealthKitGenerator" target */,
+			);
 			path = HealthKitGenerator;
 			sourceTree = "<group>";
 		};
@@ -256,6 +269,8 @@
 				DEVELOPMENT_TEAM = 6KR4K255S5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HealthKitGenerator/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads health data to simulate and test HealthKit integration.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"We need your health data access\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
@@ -287,6 +302,8 @@
 				DEVELOPMENT_TEAM = 6KR4K255S5;
 				ENABLE_PREVIEWS = YES;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = HealthKitGenerator/Info.plist;
+				INFOPLIST_KEY_NSHealthShareUsageDescription = "This app reads health data to simulate and test HealthKit integration.";
 				INFOPLIST_KEY_NSHealthUpdateUsageDescription = "\"We need your health data access\"";
 				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
 				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
