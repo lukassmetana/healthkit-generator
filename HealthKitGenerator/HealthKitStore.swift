@@ -18,6 +18,9 @@ class HealthKitStore: ObservableObject {
     @Published var log: String = ""
     @Published var isAuthorized: Bool = false
 
+    @Published var startDate: Date = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
+    @Published var endDate: Date = Date()
+
     private let calendar = Calendar.current
     private let healthStore = HealthKitManager.shared
 
@@ -62,8 +65,8 @@ class HealthKitStore: ObservableObject {
     }
 
     func generateSyntheticData() {
-        let start = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
-        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        let start = calendar.startOfDay(for: startDate)
+        let end = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate))!
 
         // Delete existing data before generating new
         let group = DispatchGroup()
@@ -77,16 +80,16 @@ class HealthKitStore: ObservableObject {
 
         group.notify(queue: .main) {
             self.log.append("🚀 Starting data generation...\n")
-            self.generateDataForLast30Days()
+            self.generateData(from: start, to: end)
         }
     }
 
-    private func generateDataForLast30Days() {
-        let now = Date()
+    private func generateData(from start: Date, to end: Date) {
         let group = DispatchGroup()
 
-        for dayOffset in 0..<30 {
-            guard let startOfDay = calendar.date(byAdding: .day, value: -dayOffset, to: now) else { continue }
+        var currentDay = start
+        while currentDay < end {
+            let startOfDay = calendar.startOfDay(for: currentDay)
             let endOfDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
 
             for metric in availableMetrics where metric.isSelected {
@@ -132,6 +135,8 @@ class HealthKitStore: ObservableObject {
                     group.leave()
                 }
             }
+
+            currentDay = calendar.date(byAdding: .day, value: 1, to: startOfDay)!
         }
 
         group.notify(queue: .main) {
@@ -140,8 +145,8 @@ class HealthKitStore: ObservableObject {
     }
 
     func deleteSyntheticData() {
-        let startDelete = Calendar.current.date(byAdding: .day, value: -30, to: Date())!
-        let endDelete = calendar.date(byAdding: .day, value: 1, to: Date())!
+        let startDelete = calendar.startOfDay(for: startDate)
+        let endDelete = calendar.date(byAdding: .day, value: 1, to: calendar.startOfDay(for: endDate))!
 
         for type in sampleTypes {
             healthStore.deleteSamples(sampleType: type, startDate: startDelete, endDate: endDelete) { success, error in

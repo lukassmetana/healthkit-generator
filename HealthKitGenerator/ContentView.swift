@@ -2,6 +2,7 @@ import SwiftUI
 
 struct ContentView: View {
     @StateObject private var store = HealthKitStore()
+    @State private var showLog = false
 
     var body: some View {
         VStack(spacing: 16) {
@@ -11,9 +12,17 @@ struct ContentView: View {
                 }
                 .padding(.horizontal)
 
+                DatePicker("Start Date", selection: $store.startDate, displayedComponents: .date)
+                    .datePickerStyle(.compact)
+                    .padding(.horizontal)
+                DatePicker("End Date", selection: $store.endDate, in: store.startDate..., displayedComponents: .date)
+                    .datePickerStyle(.compact)
+                    .padding(.horizontal)
+
                 VStack(spacing: 12) {
                     VStack(alignment: .center, spacing: 4) {
                         Button("Generate Data") {
+                            showLog = true
                             store.generateSyntheticData()
                         }
                         .buttonStyle(.borderedProminent)
@@ -52,27 +61,13 @@ struct ContentView: View {
             }
 
             Divider().padding(.top)
-
-            // Log display
-            ScrollViewReader { proxy in
-                ScrollView {
-                    Text(store.log)
-                        .font(.system(.footnote, design: .monospaced))
-                        .padding()
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .id("logBottom")
-                }
-                .frame(maxHeight: .infinity)
-                .onChange(of: store.log) { _ in
-                    withAnimation {
-                        proxy.scrollTo("logBottom", anchor: .bottom)
-                    }
-                }
-            }
         }
         .padding(.top, 16)
         .onAppear {
             store.requestAccess()
+        }
+        .fullScreenCover(isPresented: $showLog) {
+            LogView(store: store)
         }
     }
 }
