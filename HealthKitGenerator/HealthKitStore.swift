@@ -9,6 +9,7 @@ struct MetricDefinition: Identifiable {
     let unit: HKUnit
     let valueRange: ClosedRange<Double>
     let interval: TimeInterval
+    let deviceName: String
     var isSelected: Bool
 }
 
@@ -21,14 +22,14 @@ class HealthKitStore: ObservableObject {
     private let healthStore = HealthKitManager.shared
 
     @Published var availableMetrics: [MetricDefinition] = [
-        MetricDefinition(name: "Steps", typeIdentifier: .stepCount, unit: .count(), valueRange: 5...40, interval: 60, isSelected: true),
-        MetricDefinition(name: "Heart Rate", typeIdentifier: .heartRate, unit: HKUnit(from: "count/min"), valueRange: 60...100, interval: 300, isSelected: true),
-        MetricDefinition(name: "Resting HR", typeIdentifier: .restingHeartRate, unit: HKUnit(from: "count/min"), valueRange: 50...90, interval: 600, isSelected: true),
-        MetricDefinition(name: "HRV", typeIdentifier: .heartRateVariabilitySDNN, unit: .secondUnit(with: .milli), valueRange: 20...100, interval: 3600, isSelected: true),
-        MetricDefinition(name: "Respiratory Rate", typeIdentifier: .respiratoryRate, unit: HKUnit(from: "count/min"), valueRange: 12...20, interval: 600, isSelected: true),
-        MetricDefinition(name: "Body Temp", typeIdentifier: .bodyTemperature, unit: .degreeCelsius(), valueRange: 36.0...37.50, interval: 3600, isSelected: true),
-        MetricDefinition(name: "Basal Energy", typeIdentifier: .basalEnergyBurned, unit: .kilocalorie(), valueRange: 50...75, interval: 3600, isSelected: true),
-        MetricDefinition(name: "Active Energy", typeIdentifier: .activeEnergyBurned, unit: .kilocalorie(), valueRange: 5...15, interval: 1800, isSelected: true)
+        MetricDefinition(name: "Steps", typeIdentifier: .stepCount, unit: .count(), valueRange: 5...40, interval: 60, deviceName: "Apple Watch", isSelected: true),
+        MetricDefinition(name: "Heart Rate", typeIdentifier: .heartRate, unit: HKUnit(from: "count/min"), valueRange: 60...100, interval: 300, deviceName: "Apple Watch", isSelected: true),
+        MetricDefinition(name: "Resting HR", typeIdentifier: .restingHeartRate, unit: HKUnit(from: "count/min"), valueRange: 50...90, interval: 600, deviceName: "Oura Ring", isSelected: true),
+        MetricDefinition(name: "HRV", typeIdentifier: .heartRateVariabilitySDNN, unit: .secondUnit(with: .milli), valueRange: 20...100, interval: 3600, deviceName: "Oura Ring", isSelected: true),
+        MetricDefinition(name: "Respiratory Rate", typeIdentifier: .respiratoryRate, unit: HKUnit(from: "count/min"), valueRange: 12...20, interval: 600, deviceName: "Garmin", isSelected: true),
+        MetricDefinition(name: "Body Temp", typeIdentifier: .bodyTemperature, unit: .degreeCelsius(), valueRange: 36.0...37.50, interval: 3600, deviceName: "Oura Ring", isSelected: true),
+        MetricDefinition(name: "Basal Energy", typeIdentifier: .basalEnergyBurned, unit: .kilocalorie(), valueRange: 50...75, interval: 3600, deviceName: "Garmin", isSelected: true),
+        MetricDefinition(name: "Active Energy", typeIdentifier: .activeEnergyBurned, unit: .kilocalorie(), valueRange: 5...15, interval: 1800, deviceName: "Apple Watch", isSelected: true)
     ]
 
     // Expanded set of sample types for both authorization and data generation
@@ -97,6 +98,7 @@ class HealthKitStore: ObservableObject {
                     startDate: startOfDay,
                     endDate: endOfDay,
                     interval: metric.interval,
+                    deviceName: metric.deviceName,
                     completion: { success, error in
                         self.log.append(
                             success
@@ -116,7 +118,8 @@ class HealthKitStore: ObservableObject {
                     type: sleepType,
                     value: HKCategoryValueSleepAnalysis.asleep.rawValue,
                     start: sleepStart,
-                    end: sleepEnd
+                    end: sleepEnd,
+                    metadata: ["DeviceName": "Oura Ring"]
                 )
 
                 group.enter()
