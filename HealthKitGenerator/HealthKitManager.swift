@@ -38,6 +38,7 @@ class HealthKitManager {
         startDate: Date,
         endDate: Date,
         interval: TimeInterval,
+        deviceName: String? = nil,
         completion: ((Bool, Error?) -> Void)? = nil
     ) {
         guard let quantityType = HKQuantityType.quantityType(forIdentifier: typeIdentifier) else {
@@ -57,11 +58,26 @@ class HealthKitManager {
             // Clamp sample end time to not exceed endDate
             let sampleEnd = min(currentDate.addingTimeInterval(interval), endDate)
 
+            let device: HKDevice? = deviceName.map {
+                HKDevice(
+                    name: $0,
+                    manufacturer: $0,
+                    model: $0,
+                    hardwareVersion: nil,
+                    firmwareVersion: nil,
+                    softwareVersion: nil,
+                    localIdentifier: nil,
+                    udiDeviceIdentifier: nil
+                )
+            }
+
             let sample = HKQuantitySample(
                 type: quantityType,
                 quantity: quantity,
                 start: currentDate,
-                end: sampleEnd
+                end: sampleEnd,
+                device: device,
+                metadata: deviceName != nil ? ["DeviceName": deviceName!] : nil
             )
             samples.append(sample)
             currentDate = sampleEnd
